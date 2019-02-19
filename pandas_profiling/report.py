@@ -39,7 +39,7 @@ def to_html(sample, stats_object):
     if not isinstance(stats_object, dict):
         raise TypeError("stats_object must be of type dict. Did you generate this using the pandas_profiling.describe() function?")
 
-    if not set({'table', 'variables', 'freq', 'correlations'}).issubset(set(stats_object.keys())):
+    if not set({'table', 'variables', 'freq'}).issubset(set(stats_object.keys())):
         raise TypeError(
             "stats_object badly formatted. Did you generate this using the pandas_profiling.describe() function?")
 
@@ -57,18 +57,18 @@ def to_html(sample, stats_object):
                 return str(value)      # Python 3
                 
 
-    def _format_row(freq, label, max_freq, row_template, n, extra_class=''):
+    def _format_row(freq, label, max_freq, row_template, n, extra_class='', full_width=99):
             if max_freq != 0:
-                width = int(freq / max_freq * 99) + 1
+                width = int(freq / max_freq * full_width) + 1
             else:
                 width = 1
 
-            if width > 20:
-                label_in_bar = freq
+            if width > (full_width / 1.5):
+                label_in_bar = f"{freq:.2f}"
                 label_after_bar = ""
             else:
                 label_in_bar = "&nbsp;"
-                label_after_bar = freq
+                label_after_bar = f"{freq:.2f}"
 
             return row_template.render(label=label,
                                        width=width,
@@ -78,9 +78,11 @@ def to_html(sample, stats_object):
                                        label_in_bar=label_in_bar,
                                        label_after_bar=label_after_bar)
 
-    def freq_table(freqtable, n, table_template, row_template, max_number_to_print, nb_col=6):
+    def freq_table(freqtable, n, table_template, row_template, max_number_to_print, nb_col=6, eps=1e-8):
 
         freq_rows_html = u''
+
+        freqtable = freqtable.sort_values(ascending=False)
 
         if max_number_to_print > n:
                 max_number_to_print=n
@@ -93,6 +95,9 @@ def to_html(sample, stats_object):
             min_freq = 0
 
         freq_missing = n - sum(freqtable)
+        if freq_missing < eps:
+            freq_missing = 0
+
         max_freq = max(freqtable.values[0], freq_other, freq_missing)
 
         # TODO: Correctly sort missing and other
@@ -152,7 +157,7 @@ def to_html(sample, stats_object):
             formatted_values['minifreqtable'] = freq_table(stats_object['freq'][idx], n_obs,
                                                            templates.template('mini_freq_table'), 
                                                            templates.template('mini_freq_table_row'), 
-                                                           3, 
+                                                           5, 
                                                            templates.mini_freq_table_nb_col[row['type']])
 
             if row['distinct_count'] > 50:
@@ -190,16 +195,21 @@ def to_html(sample, stats_object):
             messages.append(templates.messages[col].format(formatted_values, varname = idx))
 
     messages_html = u''
-    for msg in messages:
-        messages_html += templates.message_row.format(message=msg)
+    # for msg in messages:
+        # messages_html += templates.message_row.format(message=msg)
 
-    overview_html = templates.template('overview').render(values=formatted_values, row_classes = row_classes, messages=messages_html)
+    overview_html = templates.template('overview').render(
+        values=formatted_values,
+        row_classes=row_classes,
+        messages=messages_html,
+        weighted=hasattr(sample, 'weights'),
+    )
 
     # Add plot of matrix correlation
-    pearson_matrix = plot.correlation_matrix(stats_object['correlations']['pearson'], 'Pearson')
-    spearman_matrix = plot.correlation_matrix(stats_object['correlations']['spearman'], 'Spearman')
-    correlations_html = templates.template('correlations').render(
-        values={'pearson_matrix': pearson_matrix, 'spearman_matrix': spearman_matrix})
+    # pearson_matrix = plot.correlation_matrix(stats_object['correlations']['pearson'], 'Pearson')
+    # spearman_matrix = plot.correlation_matrix(stats_object['correlations']['spearman'], 'Spearman')
+    # correlations_html = templates.template('correlations').render(
+        # values={'pearson_matrix': pearson_matrix, 'spearman_matrix': spearman_matrix})
 
     # Add sample
     sample_html = templates.template('sample').render(sample_table_html=sample.to_html(classes="sample"))
@@ -208,5 +218,5 @@ def to_html(sample, stats_object):
         'overview_html': overview_html,
         'rows_html': rows_html,
         'sample_html': sample_html,
-        'correlation_html': correlations_html
+        # 'correlation_html': correlations_html
     })

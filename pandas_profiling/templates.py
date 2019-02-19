@@ -83,7 +83,7 @@ messages['RECODED'] = u'<a href="#pp_var_{0[varname]}"><code>{0[varname]}</code>
 messages['HIGH_CARDINALITY'] = u'<a href="#pp_var_{0[varname]}"><code>{varname}</code></a> has a high cardinality: {0[distinct_count]} distinct values  <span class="label label-warning">Warning</span>'
 messages['UNSUPPORTED'] = u'<a href="#pp_var_{0[varname]}"><code>{0[varname]}</code></a> is an unsupported type, check if it needs cleaning or further analysis <span class="label label-warning">Warning</span>'
 messages['n_duplicates'] = u'Dataset has {0[n_duplicates]} duplicate rows <span class="label label-warning">Warning</span>'
-messages['skewness'] = u'<a href="#pp_var_{0[varname]}"><code>{varname}</code></a> is highly skewed (γ1 = {0[skewness]})  <span class="label label-info">Skewed</span>'
+# messages['skewness'] = u'<a href="#pp_var_{0[varname]}"><code>{varname}</code></a> is highly skewed (γ1 = {0[skewness]})  <span class="label label-info">Skewed</span>'
 messages['p_missing'] = u'<a href="#pp_var_{0[varname]}"><code>{varname}</code></a> has {0[n_missing]} / {0[p_missing]} missing values <span class="label label-default">Missing</span>'
 messages['p_infinite'] = u'<a href="#pp_var_{0[varname]}"><code>{varname}</code></a> has {0[n_infinite]} / {0[p_infinite]} infinite values <span class="label label-default">Infinite</span>'
 messages['p_zeros'] = u'<a href="#pp_var_{0[varname]}"><code>{varname}</code></a> has {0[n_zeros]} / {0[p_zeros]} zeros <span class="label label-info">Zeros</span>'

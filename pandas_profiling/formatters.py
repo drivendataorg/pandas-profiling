@@ -60,5 +60,5 @@ row_formatters={
     u'p_missing': fmt_row_severity,
     u'p_infinite': fmt_row_severity,
     u'n_duplicates': fmt_row_severity,
-    u'skewness': fmt_skewness,
+    # u'skewness': fmt_skewness,
 }

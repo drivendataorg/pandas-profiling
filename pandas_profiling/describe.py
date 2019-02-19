@@ -43,8 +43,8 @@ def describe_numeric_1d(series, **kwargs):
         # The dropna() is a workaround for https://github.com/pydata/pandas/issues/13098
         stats[_percentile_format.format(percentile)] = _series_no_na.quantile(percentile)
     stats['iqr'] = stats['75%'] - stats['25%']
-    stats['kurtosis'] = series.kurt()
-    stats['skewness'] = series.skew()
+    # stats['kurtosis'] = series.kurt()
+    # stats['skewness'] = series.skew()
     stats['sum'] = series.sum()
     stats['mad'] = series.mad()
     stats['cv'] = stats['std'] / stats['mean'] if stats['mean'] else np.NaN
@@ -186,7 +186,7 @@ def describe_supported(series, **kwargs):
     results_data = {'count': count,
                     'distinct_count': distinct_count,
                     'p_missing': 1 - count * 1.0 / leng,
-                    'n_missing': leng - count,
+                    'n_missing': (leng - count) if (leng - count) > 1e-8 else 0,
                     'p_infinite': n_infinite * 1.0 / leng,
                     'n_infinite': n_infinite,
                     'is_unique': distinct_count == leng,
@@ -219,7 +219,7 @@ def describe_unsupported(series, **kwargs):
 
     results_data = {'count': count,
                     'p_missing': 1 - count * 1.0 / leng,
-                    'n_missing': leng - count,
+                    'n_missing': (leng - count) if (leng - count) > 1e-8 else 0,
                     'p_infinite': n_infinite * 1.0 / leng,
                     'n_infinite': n_infinite,
                     'type': base.S_TYPE_UNSUPPORTED}
@@ -357,8 +357,8 @@ def describe(df, bins=10, check_correlation=True, correlation_threshold=0.9, cor
         pool.close()
 
     # Get correlations
-    dfcorrPear = df.corr(method="pearson")
-    dfcorrSpear = df.corr(method="spearman")
+    # dfcorrPear = df.corr(method="pearson")
+    # dfcorrSpear = df.corr(method="spearman")
 
     # Check correlations between variable
     if check_correlation is True:
@@ -394,6 +394,7 @@ def describe(df, bins=10, check_correlation=True, correlation_threshold=0.9, cor
         for name in idxnames:
             if name not in names:
                 names.append(name)
+    
     variable_stats = pd.concat(ldesc, join_axes=pd.Index([names]), axis=1)
     variable_stats.columns.names = df.columns.names
 
@@ -418,5 +419,5 @@ def describe(df, bins=10, check_correlation=True, correlation_threshold=0.9, cor
         'table': table_stats,
         'variables': variable_stats.T,
         'freq': {k: (base.get_groupby_statistic(df[k])[0] if variable_stats[k].type != base.S_TYPE_UNSUPPORTED else None) for k in df.columns},
-        'correlations': {'pearson': dfcorrPear, 'spearman': dfcorrSpear}
+        # 'correlations': {'pearson': dfcorrPear, 'spearman': dfcorrSpear}
     }
