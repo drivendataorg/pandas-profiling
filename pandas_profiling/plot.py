@@ -54,9 +54,15 @@ def _plot_histogram(series, bins=10, figsize=(6, 4), facecolor='#337ab7'):
         except TypeError: # matplotlib 1.4 can't plot dates so will show empty plot instead
             pass
     else:
-        plot = series.plot(kind='hist', figsize=figsize,
-                           facecolor=facecolor,
-                           bins=bins)  # TODO when running on server, send this off to a different thread
+        plot_args = dict(kind='hist',
+                         figsize=figsize,
+                         facecolor=facecolor,
+                         bins=bins)
+
+        if hasattr(series, 'weights'):
+            plot_args['weights'] = series.weights[series.notnull()]
+
+        plot = series.plot(**plot_args)  # TODO when running on server, send this off to a different thread
     return plot
 
 

@@ -3,6 +3,6 @@
         <td class="number">{{ count }}</td>
         <td class="number">{{ percentage }}%</td>
         <td>
-            <div class="bar" style="width:{{ width }}%">&nbsp;</div>
+            <div class="bar" style="width:{{ width }}%; {% if bar_color is defined %}background-color: {{ bar_color }}{% endif %}">&nbsp;</div>
         </td>
 </tr>

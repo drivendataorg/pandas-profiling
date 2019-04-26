@@ -281,7 +281,8 @@ def describe_1d(data, **kwargs):
 def multiprocess_func(x, **kwargs):
     return x[0], describe_1d(x[1], **kwargs)
 
-def describe(df, bins=10, check_correlation=True, correlation_threshold=0.9, correlation_overrides=None, check_recoded=False, pool_size=multiprocessing.cpu_count(), **kwargs):
+def describe(df, bins=10, check_correlation=True, correlation_threshold=0.9,
+             correlation_overrides=None, check_recoded=False, pool_size=multiprocessing.cpu_count(), **kwargs):
     """Generates a dict containing summary statistics for a given dataset stored as a pandas `DataFrame`.
 
     Used has is it will output its content as an HTML report in a Jupyter notebook.

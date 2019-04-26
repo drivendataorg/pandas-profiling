@@ -1,7 +1,8 @@
 <tr class="{{ extra_class }}">
     <th>{{ label }}</th>
     <td>
-        <div class="bar" style="width:{{ width }}%" data-toggle="tooltip" data-placement="right" data-html="true"
+        <div class="bar" style="width:{{ width }}%; {% if bar_color %}background-color: {{ bar_color }}{% endif %}"
+             data-toggle="tooltip" data-placement="right" data-html="true"
              data-delay=500 title="Percentage: {{ percentage }}%">
             {{ label_in_bar }}
         </div>

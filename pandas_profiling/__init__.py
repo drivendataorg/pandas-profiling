@@ -63,7 +63,16 @@ class ProfileReport(object):
         """
         sample = kwargs.get('sample', df.head())
 
+        # default to blue for the bars
+        bar_color = kwargs.pop('bar_color', False)
+
+        if bar_color:
+            kwargs['facecolor'] = bar_color
+
         description_set = describe(df, **kwargs)
+
+        if bar_color:
+            description_set['bar_color'] = bar_color
 
         self.html = to_html(sample,
                             description_set)

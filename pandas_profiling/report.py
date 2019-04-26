@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Generate reports"""
+from datetime import datetime
 import sys
 import six
 import pandas as pd
@@ -57,7 +58,7 @@ def to_html(sample, stats_object):
                 return str(value)      # Python 3
                 
 
-    def _format_row(freq, label, max_freq, row_template, n, extra_class='', full_width=99):
+    def _format_row(freq, label, max_freq, row_template, n, extra_class='', full_width=99, bar_color=None):
             if max_freq != 0:
                 width = int(freq / max_freq * full_width) + 1
             else:
@@ -70,15 +71,20 @@ def to_html(sample, stats_object):
                 label_in_bar = "&nbsp;"
                 label_after_bar = f"{freq:.2f}"
 
-            return row_template.render(label=label,
-                                       width=width,
-                                       count=freq,
-                                       percentage='{:2.1f}'.format(freq / n * 100),
-                                       extra_class=extra_class,
-                                       label_in_bar=label_in_bar,
-                                       label_after_bar=label_after_bar)
+            context = dict(label=label,
+                            width=width,
+                            count=freq,
+                            percentage='{:2.1f}'.format(freq / n * 100),
+                            extra_class=extra_class,
+                            label_in_bar=label_in_bar,
+                            label_after_bar=label_after_bar)
 
-    def freq_table(freqtable, n, table_template, row_template, max_number_to_print, nb_col=6, eps=1e-8):
+            if bar_color is not None:
+                context['bar_color'] = bar_color
+
+            return row_template.render(**context)
+
+    def freq_table(freqtable, n, table_template, row_template, max_number_to_print, nb_col=6, eps=1e-8, bar_color=None, varid=None):
 
         freq_rows_html = u''
 
@@ -103,19 +109,26 @@ def to_html(sample, stats_object):
         # TODO: Correctly sort missing and other
 
         for label, freq in six.iteritems(freqtable.iloc[0:max_number_to_print]):
-            freq_rows_html += _format_row(freq, label, max_freq, row_template, n)
+            freq_rows_html += _format_row(freq, label, max_freq, row_template, n, bar_color=bar_color)
 
         if freq_other > min_freq:
             freq_rows_html += _format_row(freq_other,
                                          "Other values (%s)" % (freqtable.count() - max_number_to_print), max_freq, row_template, n,
-                                         extra_class='other')
+                                         extra_class='other', bar_color=bar_color)
 
         if freq_missing > min_freq:
-            freq_rows_html += _format_row(freq_missing, "(Missing)", max_freq, row_template, n, extra_class='missing')
+            freq_rows_html += _format_row(freq_missing, "(Missing)", max_freq, row_template, n, extra_class='missing', bar_color=bar_color)
 
-        return table_template.render(rows=freq_rows_html, varid=hash(idx), nb_col=nb_col)
 
-    def extreme_obs_table(freqtable, table_template, row_template, number_to_print, n, ascending = True):
+        context = dict(
+            rows=freq_rows_html,
+            varid=varid,
+            nb_col=nb_col
+        )
+
+        return table_template.render(**context)
+
+    def extreme_obs_table(freqtable, table_template, row_template, number_to_print, n, ascending = True, bar_color=None):
 
         # If it's mixed between base types (str, int) convert to str. Pure "mixed" types are filtered during type discovery
         if "mixed" in freqtable.index.inferred_type:
@@ -132,7 +145,7 @@ def to_html(sample, stats_object):
         max_freq = max(obs_to_print.values)
 
         for label, freq in six.iteritems(obs_to_print):
-            freq_rows_html += _format_row(freq, label, max_freq, row_template, n)
+            freq_rows_html += _format_row(freq, label, max_freq, row_template, n, bar_color=bar_color)
 
         return table_template.render(rows=freq_rows_html)
 
@@ -142,7 +155,7 @@ def to_html(sample, stats_object):
 
     for idx, row in stats_object['variables'].iterrows():
 
-        formatted_values = {'varname': idx, 'varid': hash(idx)}
+        formatted_values = {'varname': idx, 'varid': hash(str(idx) + datetime.now().isoformat())}
         row_classes = {}
 
         for col, value in six.iteritems(row):
@@ -158,7 +171,9 @@ def to_html(sample, stats_object):
                                                            templates.template('mini_freq_table'), 
                                                            templates.template('mini_freq_table_row'), 
                                                            5, 
-                                                           templates.mini_freq_table_nb_col[row['type']])
+                                                           templates.mini_freq_table_nb_col[row['type']],
+                                                           bar_color=stats_object.get('bar_color', None),
+                                                           varid=formatted_values['varid'])
 
             if row['distinct_count'] > 50:
                 messages.append(templates.messages['HIGH_CARDINALITY'].format(formatted_values, varname = idx))
@@ -179,9 +194,15 @@ def to_html(sample, stats_object):
             messages.append(templates.messages[row['type']].format(formatted_values))
         else:
             formatted_values['freqtable'] = freq_table(stats_object['freq'][idx], n_obs,
-                                                       templates.template('freq_table'), templates.template('freq_table_row'), 10)
-            formatted_values['firstn_expanded'] = extreme_obs_table(stats_object['freq'][idx], templates.template('freq_table'), templates.template('freq_table_row'), 5, n_obs, ascending = True)
-            formatted_values['lastn_expanded'] = extreme_obs_table(stats_object['freq'][idx], templates.template('freq_table'), templates.template('freq_table_row'), 5, n_obs, ascending = False)
+                                                       templates.template('freq_table'), templates.template('freq_table_row'), 10,
+                                                       bar_color=stats_object.get('bar_color', None),
+                                                       varid=formatted_values['varid'])
+            formatted_values['firstn_expanded'] = extreme_obs_table(stats_object['freq'][idx], templates.template('freq_table'),
+                                                                    templates.template('freq_table_row'), 5, n_obs, ascending=True,
+                                                                    bar_color=stats_object.get('bar_color', None))
+            formatted_values['lastn_expanded'] = extreme_obs_table(stats_object['freq'][idx], templates.template('freq_table'),
+                                                                   templates.template('freq_table_row'), 5, n_obs, ascending=False,
+                                                                    bar_color=stats_object.get('bar_color', None))
 
         rows_html += templates.row_templates_dict[row['type']].render(values=formatted_values, row_classes=row_classes)
 
